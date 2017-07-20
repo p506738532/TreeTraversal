@@ -1,0 +1,245 @@
+#include <QtGui>
+#include <qstyleoption.h>
+#include <QInputDialog>
+#include <QGraphicsSceneMouseEvent>
+
+#include "link.h"
+#include "node.h"
+
+NodeItem::NodeItem()
+{
+    myTextColor = Qt::darkGreen;
+    myOutlineColor = Qt::darkBlue;
+    myBackgroundColor = Qt::white;
+
+    setFlags( ItemIsMovable | ItemIsSelectable | ItemSendsScenePositionChanges );
+    m_node = NULL;
+}
+
+NodeItem::NodeItem(Node *node)
+{
+    myTextColor = Qt::darkGreen;
+    myOutlineColor = Qt::darkBlue;
+    myBackgroundColor = Qt::white;
+
+    setFlags( ItemIsMovable | ItemIsSelectable | ItemSendsScenePositionChanges );
+    m_node = node;
+}
+
+NodeItem::~NodeItem()
+{
+    foreach (Link *link, myLinks)
+        delete link;
+}
+
+
+
+void NodeItem::setTextColor(const QColor &color)
+{
+    myTextColor = color;
+    update();
+}
+
+QColor NodeItem::textColor() const
+{
+    return myTextColor;
+}
+
+void NodeItem::setOutlineColor(const QColor &color)
+{
+    myOutlineColor = color;
+    update();
+}
+
+QColor NodeItem::outlineColor() const
+{
+    return myOutlineColor;
+}
+
+void NodeItem::setBackgroundColor(const QColor &color)
+{
+    myBackgroundColor = color;
+    update();
+}
+
+QColor NodeItem::backgroundColor() const
+{
+    return myBackgroundColor;
+}
+
+void NodeItem::addLink(Link *link)
+{
+    myLinks.insert(link);
+}
+
+void NodeItem::removeLink(Link *link)
+{
+    myLinks.remove(link);
+}
+
+QRectF NodeItem::boundingRect() const
+{
+    const int Margin = 1;
+    return outlineRect().adjusted(-Margin, -Margin, +Margin, +Margin);
+}
+
+QPainterPath NodeItem::shape() const
+{
+    QRectF rect = outlineRect();
+
+    QPainterPath path;
+    path.addRoundRect(rect, roundness(rect.width()),
+                      roundness(rect.height()));
+    return path;
+}
+
+void NodeItem::paint(QPainter *painter,
+                 const QStyleOptionGraphicsItem *option,
+                 QWidget * /* widget */)
+{
+    QPen pen(myOutlineColor);
+    if (option->state & QStyle::State_Selected) {
+        pen.setStyle(Qt::DotLine);
+        pen.setWidth(2);
+    }
+    painter->setPen(pen);
+    painter->setBrush(myBackgroundColor);
+
+    QRectF rect = outlineRect();
+    painter->drawRoundRect(rect, roundness(rect.width()),
+                           roundness(rect.height()));
+//    painter->drawPath (*m_path);
+
+    painter->setPen( myTextColor );
+    painter->drawText(rect, Qt::AlignCenter, m_node->text() );
+}
+
+
+
+void NodeItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    QString text = QInputDialog::getText(event->widget(),
+                           tr("Edit Text"), tr("Enter new text:"),
+                           QLineEdit::Normal, m_node->text() );
+    if (!text.isEmpty())
+        m_node->setText( text );
+}
+
+QVariant NodeItem::itemChange(GraphicsItemChange change,
+                          const QVariant &value)
+{
+    if (change == ItemPositionChange ) {
+
+        foreach (Link *link, myLinks)
+        {
+            link->Replot();
+            foreach( QGraphicsItem * item, link->childItems() )
+            {
+                if( item->type() == EdgeLabel::Type )
+                {
+                    EdgeLabel * edgeLabel = qgraphicsitem_cast<EdgeLabel *> (item);
+                    edgeLabel->Replot();
+                }
+            }
+        }
+    }
+    return QGraphicsItem::itemChange(change, value);
+}
+
+QRectF NodeItem::outlineRect() const
+{
+    const int Padding = 8;
+    QFontMetricsF metrics = QFontMetricsF( qApp->font() );
+    QRectF rect = metrics.boundingRect( m_node->text() );
+    rect.adjust(-Padding, -Padding*2, +Padding, +Padding*2);
+    rect.translate(-rect.center());
+    return rect;
+}
+
+int NodeItem::roundness(double size) const
+{
+    const int Diameter = 12;
+    return 100 * Diameter / int(size);
+}
+
+void NodeItem::setNode(Node *node)
+{
+    m_node = node;
+}
+
+Node *NodeItem::GetNode()
+{
+    return m_node;
+}
+
+Node::Node()
+{
+    m_position = QPoint( 0,0 );
+    m_parentNode = NULL;
+}
+
+QString Node::text() const
+{
+    return m_text;
+}
+
+void Node::setText(const QString &text)
+{
+    m_text = text;
+}
+
+QPointF Node::position() const
+{
+    return m_position;
+}
+
+void Node::setPosition(const QPointF &position)
+{
+    m_position = position;
+}
+
+Node *Node::GetParent() const
+{
+    return m_parentNode;
+}
+
+void Node::setParentNode(Node *parentNode)
+{
+    m_parentNode = parentNode;
+}
+
+QList<Node *> Node::GetSubNode() const
+{
+    return m_nodeList;
+}
+
+void Node::AddSubNode( Node *node)
+{
+    m_nodeList.append( node );
+    node->setParentNode( this );
+}
+
+void Node::RemoveOneChild(Node *child)
+{
+    if( m_nodeList.contains( child ) )
+    {
+        child->RemoveParent();
+        m_nodeList.removeOne( child );
+    }
+}
+
+void Node::RemoveAllChildren()
+{
+    for( int s = 0; s<m_nodeList.count(); ++s )
+    {
+        m_nodeList.at( s )->RemoveParent();
+    }
+    m_nodeList.clear();
+
+}
+
+void Node::RemoveParent()
+{
+    m_parentNode = NULL;
+
+}
