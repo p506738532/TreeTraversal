@@ -214,7 +214,7 @@ void MainWindow::PostRecursion(Node *node)
         Node * faultChild = faultChildren.at(i);
         PostRecursion( faultChild );
     }
-    node->setText( QString("Post-No%1").arg( m_traversalNo++ ) );
+    node->setText( QString("Post-No.%1").arg( m_traversalNo++ ) );
 }
 
 void MainWindow::ConnectInit()
@@ -323,7 +323,7 @@ void MainWindow::sl_pre()
         if( !visitedNodeList.contains(peekNode) )
         {
             visitedNodeList.append( peekNode );//visit it.
-            peekNode->setText( QString("Pre-No%1").arg( m_traversalNo++ )  );
+            peekNode->setText( QString("Pre-No.%1").arg( m_traversalNo++ )  );
         }
         QList<Node *> subNodeList =  peekNode->GetSubNode();
         bool subVisitedBool = true;
@@ -405,7 +405,7 @@ void MainWindow::sl_post()
             {
                 Node * visitNode = stackNode.pop();
                 visitedNodeList.append( visitNode );//visit it.
-                visitNode->setText( QString("Post-No%1").arg( m_traversalNo++ )  );
+                visitNode->setText( QString("Post-No.%1").arg( m_traversalNo++ )  );
             }
     }
 #endif
