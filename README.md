@@ -11,4 +11,3 @@
 ![后序遍历](https://github.com/p506738532/TreeTraversal/edit/master/Images/后序遍历 "后序遍历") <br>
 点击【广度遍历】后，主窗口上的树状结构以广度遍历的方式进行顺序标出序号，如下图所示。<br>
 ![广度遍历](https://github.com/p506738532/TreeTraversal/edit/master/Images/广度遍历 "广度遍历") <br>
-![baidu](http://www.baidu.com/img/bdlogo.gif)
